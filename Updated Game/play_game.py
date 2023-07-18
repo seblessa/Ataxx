@@ -48,7 +48,6 @@ def draw_board(screen, game, selected_piece=None):
             pygame.draw.circle(screen, LIGHT_YELLOW, (x, y), 40)
 
 
-
 def play_game(game):
     pygame.init()
 

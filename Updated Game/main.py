@@ -16,7 +16,6 @@ def player_vs_computer():
             player_vs_computer()
 
 
-
 def main():
     print("Please choose what you want to do:\n")
     print("1 - Player vs Player")
