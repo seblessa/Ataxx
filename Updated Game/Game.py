@@ -16,10 +16,8 @@ class Game:
         self.turn = "1"
         self.algorithm = algorithm
         self.winner = winner
-        if player1_pieces is None:
-            self.player1_pieces = [(0, 0), (0, 6)]
-        if player2_pieces is None:
-            self.player2_pieces = [(6, 0), (6, 6)]
+        self.player1_pieces = player1_pieces if player1_pieces is not None else [(0, 0), (0, 6)]
+        self.player2_pieces = player2_pieces if player2_pieces is not None else [(6, 0), (6, 6)]
 
     def __copy__(self):
         return Game(
@@ -49,7 +47,7 @@ class Game:
         for n in range(-1, 2):
             for m in range(-1, 2):
                 if n != 0 or m != 0:
-                    successors.extend(self.get_moves(n, m, i, j))
+                    successors.extend(self.append_moves(n, m, i, j))
         return successors
 
     def jump(self, i, j):
@@ -57,10 +55,10 @@ class Game:
         for n in range(-2, 3):
             for m in range(-2, 3):
                 if n != 0 or m != 0 or n != 1 or m != 1 or n != -1 or m != -1:
-                    successors.extend(self.get_moves(n, m, i, j))
+                    successors.extend(self.append_moves(n, m, i, j))
         return successors
 
-    def get_moves(self, n, m, i, j):
+    def append_moves(self, n, m, i, j):
         successors = []
         if 0 <= i + n < 7 and 0 <= j + m < 7:
             if self.game[i + n][j + m] == "-":
@@ -68,19 +66,40 @@ class Game:
         return successors
 
     def successors(self):
+        successors = []
+        walkers, jumpers = self.possible_moves()
+
+        for walker in walkers:
+            selected, piece = walker
+            game_copy = self.__copy__()
+            game_copy.game[piece[0]][piece[1]] = self.turn
+            game_copy.transform_surrondings(piece[0], piece[1])
+            successors.append((game_copy, selected, piece))
+
+        for jumper in jumpers:
+            selected, piece = jumper
+            game_copy = self.__copy__()
+            game_copy.game[piece[0]][piece[1]] = self.turn
+            game_copy.game[selected[0]][selected[1]] = "-"
+            game_copy.transform_surrondings(piece[0], piece[1])
+            successors.append((game_copy, selected, piece))
+
+        return successors
+
+    def possible_moves(self):
         walkers = []
         jumpers = []
         if self.turn == "1":
             for piece in self.player1_pieces:
-                jumpers.extend(self.jump(piece[0], piece[1]))
-                walkers.extend(self.walk(piece[0], piece[1]))
+                jumpers.extend((piece, successor) for successor in self.jump(*piece))
+                walkers.extend((piece, successor) for successor in self.walk(*piece))
         else:
             for piece in self.player2_pieces:
-                jumpers.extend(self.jump(piece[0], piece[1]))
-                walkers.extend(self.walk(piece[0], piece[1]))
+                jumpers.extend((piece, successor) for successor in self.jump(*piece))
+                walkers.extend((piece, successor) for successor in self.walk(*piece))
 
-        successors = jumpers, walkers
-        return successors
+        moves = jumpers, walkers
+        return moves
 
     def transform_surrondings(self, i, j):
         for n in range(-1, 2):
@@ -90,15 +109,20 @@ class Game:
                         if self.game[i + n][j + m] == "2":
                             self.game[i + n][j + m] = "1"
                             self.player1_pieces.append((i + n, j + m))
-                            self.player2_pieces.remove((i + n, j + m))
+                            if (i + n, j + m) in self.player2_pieces:
+                                self.player2_pieces.remove((i + n, j + m))
                     else:
                         if self.game[i + n][j + m] == "1":
                             self.game[i + n][j + m] = "2"
                             self.player2_pieces.append((i + n, j + m))
-                            self.player1_pieces.remove((i + n, j + m))
+                            if (i + n, j + m) in self.player1_pieces:
+                                self.player1_pieces.remove((i + n, j + m))
 
     def move(self, selected, i, j):
-        jumpers, walkers = self.successors()
+        jumpers, walkers = self.possible_moves()
+
+        walkers = [walker[1] for walker in walkers]
+        jumpers = [jumper[1] for jumper in jumpers]
 
         if (i, j) in walkers:
             if (i, j) != selected:
@@ -128,7 +152,7 @@ class Game:
             return False
 
     def game_over(self):
-        successors = self.successors()
+        successors = self.possible_moves()
         if len(successors[0]) == 0 and len(successors[1]) == 0:
             if len(self.player1_pieces) > len(self.player2_pieces):
                 self.winner = "1"

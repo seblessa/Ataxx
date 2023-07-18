@@ -1,4 +1,5 @@
 import contextlib
+import sys
 
 with contextlib.redirect_stdout(None):
     import pygame
@@ -7,53 +8,45 @@ from algorithms import *
 
 # Colors
 
+WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
 BLUE = (0, 0, 255)
 LIGHT_BLUE = (135, 206, 250)
 
 RED = (255, 0, 0)
-LIGHT_RED = (255, 95, 95)
+LIGHT_RED = (255, 10, 90)
+LIGHTER_RED = (255, 95, 95)
 
 YELLOW = (249, 166, 3)
-LIGHT_YELLOW = (241, 235, 156)
+LIGHT_YELLOW = (255, 255, 0)
+LIGHTER_YELLOW = (241, 235, 156)
 
 
 def draw_board(screen, game, selected_piece=None):
-    # Calculate the offset to center the board
-    offset_x = (screen.get_width() - 700) // 2
-    offset_y = (screen.get_height() - 700) // 2
+    offset = (screen.get_width() - 700) // 2
 
-    # Draw the background
-    if game.turn == "1":
-        screen.fill(LIGHT_RED)
-    else:
-        screen.fill(LIGHT_YELLOW)
+    screen.fill(LIGHTER_RED if game.turn == "1" else LIGHTER_YELLOW)
 
-    # Draw the circles representing empty spaces
     for row in range(7):
         for col in range(7):
-            x = col * 100 + 50 + offset_x
-            y = row * 100 + 50 + offset_y
+            x = col * 100 + 50 + offset
+            y = row * 100 + 50 + offset
             pygame.draw.circle(screen, LIGHT_BLUE, (x, y), 40)
 
-    # Draw the player pieces
-    for i in range(7):
-        for j in range(7):
-            if game.game[i][j] == "1":
-                x = j * 100 + 50 + offset_x
-                y = i * 100 + 50 + offset_y
+            if game.game[row][col] == "1":
                 pygame.draw.circle(screen, RED, (x, y), 40)
-            elif game.game[i][j] == "2":
-                x = j * 100 + 50 + offset_x
-                y = i * 100 + 50 + offset_y
+            elif game.game[row][col] == "2":
                 pygame.draw.circle(screen, YELLOW, (x, y), 40)
 
-    # Draw the selected piece
     if selected_piece is not None:
-        x = selected_piece[1] * 100 + 50 + offset_x
-        y = selected_piece[0] * 100 + 50 + offset_y
-        pygame.draw.circle(screen, BLACK, (x, y), 40)
+        x = selected_piece[1] * 100 + 50 + offset
+        y = selected_piece[0] * 100 + 50 + offset
+        if game.turn == "1":
+            pygame.draw.circle(screen, LIGHT_RED, (x, y), 40)
+        else:
+            pygame.draw.circle(screen, LIGHT_YELLOW, (x, y), 40)
+
 
 
 def play_game(game):
@@ -67,16 +60,15 @@ def play_game(game):
 
     clock = pygame.time.Clock()
 
-    game_over = False
     selected_piece = None
 
-    while not game_over:
+    while True:
         # Draw the board
         draw_board(screen, game, selected_piece)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                exit(0)
+                sys.exit()
             # Get the current position of the mouse
 
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -98,28 +90,24 @@ def play_game(game):
         pygame.display.flip()
         clock.tick(60)
 
-        # Check if an algorithm is specified
-        if game.algorithm is not None:
-            if game.algorithm == 1:
-                selected_piece, pos_i, pos_j = random_move(game)
-            elif game.algorithm == 2:
-                selected_piece, pos_i, pos_j = miniMax(game, 3)
-            else:
-                selected_piece, pos_i, pos_j = miniMax(game, 5)
-
-            game.move(selected_piece, pos_i, pos_j)
-            selected_piece = None
-            pygame.display.flip()
-            time.sleep(0.5)  # Delay for better visualization
-
-        # Check if the game is over
         if game.game_over():
             draw_board(screen, game, selected_piece)
-            game_over = True
+            break
+
+        if game.turn == "2":
+            if game.algorithm is not None:
+                if game.algorithm == 1:
+                    selected_piece, pos_i, pos_j = random_move(game)
+                else:  # game.algorithm == 2:
+                    selected_piece, pos, score = minimax(game, 3, False)
+                    pos_i, pos_j = pos
+
+                game.move(selected_piece, pos_i, pos_j)
+                selected_piece = None
 
     # Game over message
     font = pygame.font.Font(None, 50)
-    text = font.render("Game Over", True, YELLOW)
+    text = font.render("Game Over", True, BLACK)
     text_rect = text.get_rect(center=(350, 350))
     screen.blit(text, text_rect)
     pygame.display.flip()
@@ -129,6 +117,6 @@ def play_game(game):
 
     # Announce the winner in the terminal
     if game.winner == "1":
-        print("Player 1 (RED) wins!")
+        print("\nPlayer 1 (RED) wins!")
     elif game.winner == "2":
-        print("Player 2 (YELLOW) wins!")
+        print("\nPlayer 2 (YELLOW) wins!")
