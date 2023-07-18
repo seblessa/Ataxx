@@ -2,7 +2,7 @@ from copy import copy
 
 
 def create_game():
-    game = [["-"] * 7 for _ in range(7)]
+    game = [["-"] * 7 for _ in range(7)] # Create a 7x7 board
 
     game[0][0] = game[0][6] = "1"
     game[6][0] = game[6][6] = "2"
