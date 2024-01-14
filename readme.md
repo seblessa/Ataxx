@@ -21,11 +21,7 @@
 
     4) After the game is finish you will be redirected to the start menu again and can choose the start options again.
 
-## Updates readme.md
-
-### Authors
-
-- [Sebastião Santos Lessa](https://github.com/Seblessa)
+## Updated readme.md
 
 ### Introduction
 
